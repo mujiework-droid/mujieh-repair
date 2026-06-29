@@ -261,7 +261,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,'Helvetica 
         <div class="chip" onclick="toggleChip(this,'門把五金')">門把五金</div>
         <div class="chip" onclick="toggleChip(this,'木作系統櫃')">木作系統櫃</div>
         <div class="chip" onclick="toggleChip(this,'地板')">地板</div>
-        <div class="chip" onclick="toggleChip(this,'水電漏水')">水電漏水</div>
+        <div class="chip" onclick="toggleChip(this,'漏水')">漏水</div>
         <div class="chip" onclick="toggleChip(this,'窗簾遮陽')">窗簾遮陽</div>
         <div class="chip" onclick="toggleChip(this,'油漆牆面')">油漆牆面</div>
         <div class="chip" onclick="toggleChip(this,'其他')">其他</div>
@@ -657,6 +657,14 @@ function switchTab(el,tab){
   document.querySelectorAll('.atab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');adminTab=tab;renderAdmin();
 }
+function toggleDetail(ref){
+  const el=document.getElementById('detail-'+ref);
+  const chev=document.getElementById('chev-'+ref);
+  const open=el.style.display==='none';
+  el.style.display=open?'block':'none';
+  chev.style.transform=open?'rotate(90deg)':'';
+}
+
 function renderAdmin(){
   const q=(document.getElementById('admin-search').value||'').toLowerCase();
   const fs=document.getElementById('admin-filter').value;
@@ -674,26 +682,47 @@ function renderAdmin(){
     const overdue=!['已完成','已取消'].includes(r.status)&&days>=OVERDUE_DAYS;
     const[cls,lbl]=statusMap[r.status]||['t-pending','待確認'];
     const statuses=['待確認','已聯繫廠商','已安排維修','已完成','已取消'];
+    const mediaBtn = r.video
+      ? `<a href="${r.video}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:var(--rs);font-size:13px;text-decoration:none;font-weight:500;margin-top:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>查看影片 / 照片</a>`
+      : (r.photos>0 ? `<div style="font-size:12px;color:var(--ink3);margin-top:6px">📷 業主已上傳 ${r.photos} 張照片</div>` : '');
     return `<div class="ccard">
-      <div class="ccard-top">
+      <div class="ccard-top" onclick="toggleDetail('${r.ref}')" style="cursor:pointer;margin-bottom:0">
         <div>
           <div class="cproj">${r.ref}　${r.date}${overdue?`　<span style="color:var(--red);font-weight:700">逾期 ${days} 天</span>`:''}</div>
           <div class="ctitle">${r.project}　${r.name} ${r.title||''}</div>
         </div>
-        <span class="tag ${overdue?'t-overdue':cls}">${overdue?`逾${days}天`:lbl}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="tag ${overdue?'t-overdue':cls}">${overdue?`逾${days}天`:lbl}</span>
+          <span id="chev-${r.ref}" style="color:var(--ink3);font-size:20px;transition:transform .2s;line-height:1">›</span>
+        </div>
       </div>
-      <div class="cdesc">${r.desc}</div>
-      <div class="cmeta">
-        <span>📞 ${r.phone}</span>
-        ${r.addr?`<span>📍 ${r.addr}</span>`:''}
-        ${r.cats.length?`<span>${r.cats.join('、')}</span>`:''}
-      </div>
-      ${r.note?`<div style="font-size:12px;color:var(--ink3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">備註：${r.note}</div>`:''}
-      <div class="su-row">
-        ${statuses.map(s=>`<button class="su-btn${r.status===s?' act':''}" onclick="updateStatus('${r.ref}','${s}')">${s}</button>`).join('')}
+
+      <div id="detail-${r.ref}" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="cdesc" style="margin-bottom:8px">${r.desc}</div>
+        <div class="cmeta" style="margin-bottom:8px">
+          <span>📞 <a href="tel:${r.phone}" style="color:var(--ink);font-weight:500">${r.phone}</a></span>
+          ${r.addr?`<span>📍 ${r.addr}</span>`:''}
+          ${r.cats&&r.cats.length?`<span>🏷 ${r.cats.join('、')}</span>`:''}
+          ${r.time?`<span>⏰ ${r.time}</span>`:''}
+        </div>
+        ${r.note?`<div style="font-size:13px;color:var(--ink2);margin-bottom:6px;padding:10px 12px;background:var(--bg2);border-radius:var(--rs)">備註：${r.note}</div>`:''}
+        ${mediaBtn}
+        <div class="su-row" style="margin-top:12px">
+          ${statuses.map(s=>`<button class="su-btn${r.status===s?' act':''}" onclick="updateStatus('${r.ref}','${s}')">${s}</button>`).join('')}
+          <button class="su-btn" style="margin-left:auto;color:var(--red);border-color:var(--red)" onclick="deleteCase('${r.ref}')">刪除</button>
+        </div>
       </div>
     </div>`;
   }).join('');
+}
+
+function deleteCase(ref){
+  if(!confirm('確定要刪除這筆案件？此動作無法復原。')) return;
+  const d=db.get().filter(r=>r.ref!==ref);
+  db.save(d);
+  toast('案件已刪除');
+  renderAdmin();
+  checkHomeAlert();
 }
 
 function updateStatus(ref,status){
