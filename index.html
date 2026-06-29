@@ -311,9 +311,31 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,'Helvetica 
       <div class="fsel-wrap"><select class="fsel" id="f-time"><option value="">不限</option><option>上午 09:00 – 12:00</option><option>下午 13:00 – 18:00</option><option>請先以簡訊聯繫</option></select></div>
     </div>
     <div class="field">
-      <div class="flbl">影片或補充照片連結</div>
-      <div class="fhint">將影片上傳至 Google 相簿或 LINE，再把連結貼在這裡（選填）</div>
-      <input class="finput" type="url" id="f-video" inputmode="url" placeholder="https://photos.google.com/...">
+      <div class="flbl">影片或補充照片</div>
+      <div class="fhint">可直接選取手機影片或照片上傳（選填，最大 100MB）</div>
+      <div id="video-upload-area" style="border:1px solid var(--border);border-radius:var(--rs);background:var(--bg);overflow:hidden">
+        <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 16px;cursor:pointer;gap:8px" id="video-label">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+          <span style="font-size:13.5px;color:var(--ink2);font-weight:500">點此選取影片或照片</span>
+          <span style="font-size:12px;color:var(--ink3)">支援 MP4、MOV、JPG、PNG</span>
+          <input type="file" accept="video/*,image/*" style="display:none" id="f-video-file" onchange="handleVideoSelect(this)">
+        </label>
+        <div id="video-preview" style="display:none;padding:12px 14px;border-top:1px solid var(--border);font-size:13px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span id="video-filename" style="color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+            <span style="color:var(--ink3);font-size:12px" id="video-size"></span>
+            <button onclick="clearVideo()" style="background:none;border:none;color:var(--ink3);cursor:pointer;font-size:16px;padding:0 4px">✕</button>
+          </div>
+          <div id="video-progress" style="display:none;margin-top:10px">
+            <div style="height:4px;background:var(--bg2);border-radius:2px;overflow:hidden">
+              <div id="video-progress-bar" style="height:100%;background:var(--ink);width:0%;transition:width .3s"></div>
+            </div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:5px" id="video-progress-txt">上傳中…</div>
+          </div>
+        </div>
+      </div>
+      <input type="hidden" id="f-video" value="">
     </div>
     <div class="field"><div class="flbl">其他備註</div><textarea class="ftxt" id="f-note" placeholder="門禁說明、特殊狀況等…" style="min-height:72px"></textarea></div>
     <button class="btn btn-dark" onclick="toF3()">下一步</button>
@@ -410,7 +432,9 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,'Helvetica 
 
 <script>
 // ── CONFIG ──
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxdkLXO7RGXlfaPSfDFGc4GPIjIrMJ86sxW4FARCViBAtuut2tXUC4MmDGhtHgd5BPr/exec'; // 貼上部署後的 GAS 網址
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxdkLXO7RGXlfaPSfDFGc4GPIjIrMJ86sxW4FARCViBAtuut2tXUC4MmDGhtHgd5BPr/exec';
+const CLD_CLOUD = 'dov0yyrpd';
+const CLD_PRESET = 'mujieh_repair'; // 貼上部署後的 GAS 網址
 const ADMIN_PIN = '1234';             // 修改成你的管理密碼
 const OVERDUE_DAYS = 3;               // 超過幾天未更新視為逾期
 const NOTIFY_EMAIL = 'mujie.work@gmail.com';
@@ -503,8 +527,61 @@ function toF3(){
   go('s-f3');
 }
 
+// ── CLOUDINARY UPLOAD ──
+function handleVideoSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const mb = (file.size / 1024 / 1024).toFixed(1);
+  document.getElementById('video-filename').textContent = file.name;
+  document.getElementById('video-size').textContent = mb + ' MB';
+  document.getElementById('video-preview').style.display = 'block';
+  document.getElementById('video-label').style.display = 'none';
+}
+
+function clearVideo() {
+  document.getElementById('f-video-file').value = '';
+  document.getElementById('f-video').value = '';
+  document.getElementById('video-preview').style.display = 'none';
+  document.getElementById('video-label').style.display = 'flex';
+}
+
+async function uploadToCloudinary() {
+  const fileInput = document.getElementById('f-video-file');
+  if (!fileInput.files[0]) return null;
+  const file = fileInput.files[0];
+  const isVideo = file.type.startsWith('video');
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLD_PRESET);
+  const url = `https://api.cloudinary.com/v1_1/${CLD_CLOUD}/${isVideo ? 'video' : 'image'}/upload`;
+  document.getElementById('video-progress').style.display = 'block';
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) {
+        const pct = Math.round(e.loaded / e.total * 100);
+        document.getElementById('video-progress-bar').style.width = pct + '%';
+        document.getElementById('video-progress-txt').textContent = `上傳中… ${pct}%`;
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        const res = JSON.parse(xhr.responseText);
+        document.getElementById('video-progress-txt').textContent = '上傳完成 ✓';
+        document.getElementById('f-video').value = res.secure_url;
+        resolve(res.secure_url);
+      } else {
+        reject(new Error('上傳失敗'));
+      }
+    };
+    xhr.onerror = () => reject(new Error('網路錯誤'));
+    xhr.open('POST', url);
+    xhr.send(formData);
+  });
+}
+
 // ── SUBMIT ──
-function doSubmit(){
+async function doSubmit(){
   const btn=document.getElementById('submit-btn');
   btn.disabled=true;btn.textContent='送出中…';
   const ref='MJ'+Date.now().toString().slice(-6);
@@ -522,10 +599,23 @@ function doSubmit(){
     note:document.getElementById('f-note').value.trim(),
     photos:photos.filter(Boolean).length,
   };
+  // 先上傳影片（若有選取）
+  if (document.getElementById('f-video-file').files[0]) {
+    btn.textContent = '上傳影片中…';
+    try {
+      await uploadToCloudinary();
+      rec.video = document.getElementById('f-video').value;
+    } catch(e) {
+      toast('影片上傳失敗，請重試');
+      btn.disabled = false; btn.textContent = '確認送出';
+      return;
+    }
+  }
   db.add(rec);
   const reset=()=>{
     cats=[];photos=[null,null,null];
     ['f-desc','f-name','f-phone','f-proj','f-addr','f-video','f-note'].forEach(id=>document.getElementById(id).value='');
+    clearVideo();
     document.getElementById('f-time').value='';
     document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
     for(let i=0;i<3;i++)document.getElementById('ps'+i).innerHTML=photoSlotHTML(i);
