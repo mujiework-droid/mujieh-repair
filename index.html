@@ -310,6 +310,11 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,'Helvetica 
       <div class="flbl">方便聯繫時段</div>
       <div class="fsel-wrap"><select class="fsel" id="f-time"><option value="">不限</option><option>上午 09:00 – 12:00</option><option>下午 13:00 – 18:00</option><option>請先以簡訊聯繫</option></select></div>
     </div>
+    <div class="field">
+      <div class="flbl">影片或補充照片連結</div>
+      <div class="fhint">將影片上傳至 Google 相簿或 LINE，再把連結貼在這裡（選填）</div>
+      <input class="finput" type="url" id="f-video" inputmode="url" placeholder="https://photos.google.com/...">
+    </div>
     <div class="field"><div class="flbl">其他備註</div><textarea class="ftxt" id="f-note" placeholder="門禁說明、特殊狀況等…" style="min-height:72px"></textarea></div>
     <button class="btn btn-dark" onclick="toF3()">下一步</button>
   </div>
@@ -491,6 +496,7 @@ function toF3(){
     ['姓名',`${name} ${document.getElementById('f-title').value}`],
     ['電話',phone],['地址',addr],
     ['時段',document.getElementById('f-time').value||'不限'],
+    ...(document.getElementById('f-video').value.trim()?[['影片',document.getElementById('f-video').value.trim()]]:[]),
     ...(document.getElementById('f-note').value.trim()?[['備註',document.getElementById('f-note').value.trim()]]:[]),
   ];
   document.getElementById('confirm-block').innerHTML=rows.map(([k,v])=>`<div class="crow"><div class="ckey">${k}</div><div class="cval">${v}</div></div>`).join('');
@@ -512,13 +518,14 @@ function doSubmit(){
     cats:[...cats],
     desc:document.getElementById('f-desc').value.trim(),
     time:document.getElementById('f-time').value,
+    video:document.getElementById('f-video').value.trim(),
     note:document.getElementById('f-note').value.trim(),
     photos:photos.filter(Boolean).length,
   };
   db.add(rec);
   const reset=()=>{
     cats=[];photos=[null,null,null];
-    ['f-desc','f-name','f-phone','f-proj','f-addr','f-note'].forEach(id=>document.getElementById(id).value='');
+    ['f-desc','f-name','f-phone','f-proj','f-addr','f-video','f-note'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('f-time').value='';
     document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
     for(let i=0;i<3;i++)document.getElementById('ps'+i).innerHTML=photoSlotHTML(i);
