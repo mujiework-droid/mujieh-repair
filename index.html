@@ -443,13 +443,45 @@ const NOTIFY_EMAIL = 'mujie.work@gmail.com';
 let cats=[], photos=[null,null,null], adminTab='all';
 const DB_KEY='mj_repairs';
 
-// ── STORAGE ──
+// ── STORAGE（本機快取 + 雲端同步）──
 const db={
   get:()=>JSON.parse(localStorage.getItem(DB_KEY)||'[]'),
   save:(d)=>localStorage.setItem(DB_KEY,JSON.stringify(d)),
   add:(rec)=>{const d=db.get();d.unshift(rec);db.save(d)},
   update:(ref,patch)=>{const d=db.get();const i=d.findIndex(r=>r.ref===ref);if(i>-1){d[i]={...d[i],...patch,lastUpdate:today()};db.save(d)}},
 };
+
+// ── 雲端資料（管理後台用）──
+let cloudCases = [];
+let cloudLoading = false;
+
+async function fetchCloudCases() {
+  if(GAS_URL==='YOUR_GAS_URL_HERE') return;
+  cloudLoading = true;
+  try {
+    const res = await fetch(GAS_URL + '?action=getCases');
+    const json = await res.json();
+    if(json.ok) {
+      cloudCases = json.cases;
+      localStorage.setItem('mj_cloud_cache', JSON.stringify(cloudCases));
+    }
+  } catch(e) {
+    // 網路失敗用快取
+    const cache = localStorage.getItem('mj_cloud_cache');
+    if(cache) cloudCases = JSON.parse(cache);
+  }
+  cloudLoading = false;
+}
+
+async function cloudUpdateStatus(ref, status) {
+  if(GAS_URL==='YOUR_GAS_URL_HERE') return;
+  await fetch(`${GAS_URL}?action=updateStatus&ref=${encodeURIComponent(ref)}&status=${encodeURIComponent(status)}`);
+}
+
+async function cloudDeleteCase(ref) {
+  if(GAS_URL==='YOUR_GAS_URL_HERE') return;
+  await fetch(`${GAS_URL}?action=deleteCase&ref=${encodeURIComponent(ref)}`);
+}
 const today=()=>{const n=new Date();return `${n.getFullYear()}/${n.getMonth()+1}/${n.getDate()}`};
 const daysSince=(ds)=>{if(!ds)return 999;const[y,m,d]=ds.split('/').map(Number);return Math.floor((Date.now()-new Date(y,m-1,d))/86400000)};
 
@@ -459,7 +491,12 @@ function go(id){
   document.getElementById(id).classList.add('on');
   window.scrollTo(0,0);
   if(id==='s-hist') renderHist();
-  if(id==='s-admin') renderAdmin();
+  if(id==='s-admin'){
+    document.getElementById('admin-body').innerHTML='<div style="padding:40px;text-align:center;color:var(--ink3);font-size:14px">載入中…</div>';
+    renderAdmin();
+    // 載入雲端資料
+    fetchCloudCases().then(()=>renderAdmin());
+  }
   if(id==='s-home') checkHomeAlert();
 }
 
@@ -668,7 +705,8 @@ function toggleDetail(ref){
 function renderAdmin(){
   const q=(document.getElementById('admin-search').value||'').toLowerCase();
   const fs=document.getElementById('admin-filter').value;
-  let list=db.get();
+  // 優先用雲端資料，沒有則用本機
+  let list = cloudCases.length > 0 ? cloudCases : db.get();
   if(adminTab==='open') list=list.filter(r=>!['已完成','已取消'].includes(r.status));
   if(adminTab==='overdue') list=list.filter(r=>!['已完成','已取消'].includes(r.status)&&daysSince(r.lastUpdate)>=OVERDUE_DAYS);
   if(adminTab==='done') list=list.filter(r=>r.status==='已完成');
@@ -718,15 +756,24 @@ function renderAdmin(){
 
 function deleteCase(ref){
   if(!confirm('確定要刪除這筆案件？此動作無法復原。')) return;
+  // 刪除本機
   const d=db.get().filter(r=>r.ref!==ref);
   db.save(d);
+  // 刪除雲端
+  cloudCases = cloudCases.filter(r=>r.ref!==ref);
+  cloudDeleteCase(ref);
   toast('案件已刪除');
   renderAdmin();
   checkHomeAlert();
 }
 
 function updateStatus(ref,status){
+  // 更新本機
   db.update(ref,{status});
+  // 更新雲端
+  const ci = cloudCases.findIndex(r=>r.ref===ref);
+  if(ci>-1) cloudCases[ci].status=status;
+  cloudUpdateStatus(ref,status);
   toast(`已更新為「${status}」`);
   renderAdmin();
   checkHomeAlert();
