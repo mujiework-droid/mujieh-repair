@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1A1A1A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="木介維修">
+<title>木介設計｜保固維修</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#F5F5F5;--bg2:#EBEBEB;--surface:#FFF;--border:#DCDCDC;--border-hi:#888;
+  --ink:#1A1A1A;--ink2:#555;--ink3:#888;--ink4:#AAAAAA;
+  --green:#1E6B4A;--green-bg:#EAF3EE;
+  --amber:#92600A;--amber-bg:#FFF4E0;
+  --red:#B03030;--red-bg:#FAEAEA;
+  --r:10px;--rs:7px;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;background:var(--bg);font-family:-apple-system,'Helvetica Neue','Noto Sans TC',sans-serif;color:var(--ink);font-size:15px;-webkit-font-smoothing:antialiased}
+
+/* screens */
+.sc{display:none;flex-direction:column;min-height:100vh}
+.sc.on{display:flex}
+
+/* topbar */
+.tb{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:calc(var(--st) + 12px) 16px 12px;flex-shrink:0}
+.tb-back{width:34px;height:34px;border-radius:50%;background:var(--bg);border:none;color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tb-back svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.tb-title{font-size:16px;font-weight:600;flex:1}
+.tb-badge{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ink4);margin-left:auto}
+
+/* scroll */
+.bd{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.pad{padding:20px 16px calc(var(--sb) + 32px)}
+
+/* home hero */
+.hero{background:var(--ink);color:#fff;padding:calc(var(--st) + 32px) 20px 28px}
+.hero-co{font-size:11px;font-weight:700;letter-spacing:.18em;color:rgba(255,255,255,.4);margin-bottom:16px}
+.hero-title{font-size:24px;font-weight:600;line-height:1.25;letter-spacing:-.01em}
+.hero-sub{font-size:13px;color:rgba(255,255,255,.5);margin-top:8px;line-height:1.6}
+.hero-proj{margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:8px}
+.hero-proj-lbl{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.06em}
+.hero-proj-val{font-size:14px;font-weight:500;color:rgba(255,255,255,.85)}
+
+/* menu list */
+.mlist{display:flex;flex-direction:column;gap:1px;background:var(--border);border-radius:var(--r);overflow:hidden}
+.mrow{background:var(--surface);display:flex;align-items:center;gap:14px;padding:16px;cursor:pointer;transition:background .1s}
+.mrow:active{background:var(--bg)}
+.mrow-ico{width:38px;height:38px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.mrow-ico svg{width:18px;height:18px;stroke:var(--ink2);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mrow-txt{flex:1}
+.mrow-title{font-size:15px;font-weight:500}
+.mrow-sub{font-size:12px;color:var(--ink3);margin-top:2px}
+.mrow-chev{color:var(--ink4);font-size:18px}
+.mrow-alert{background:var(--red);color:#fff;font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto}
+
+/* section label */
+.slbl{font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;margin:24px 0 8px}
+.slbl:first-child{margin-top:0}
+
+/* info block */
+.iblock{background:var(--surface);border-radius:var(--r);padding:16px}
+.irow{display:flex;gap:10px;align-items:baseline}
+.ilbl{color:var(--ink4);font-size:11px;width:56px;flex-shrink:0;letter-spacing:.04em}
+.ival{color:var(--ink);font-size:13.5px}
+.idiv{height:1px;background:var(--border);margin:10px 0}
+
+/* steps */
+.steps{display:flex;align-items:center;margin-bottom:24px}
+.sdot{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.sdot.done{background:var(--ink);color:#fff}
+.sdot.act{background:var(--ink);color:#fff}
+.sdot.todo{background:var(--bg2);color:var(--ink3)}
+.stxt{font-size:12px;color:var(--ink3);white-space:nowrap;margin-left:6px}
+.stxt.act{color:var(--ink);font-weight:600}
+.sline{flex:1;height:1px;background:var(--border);margin:0 8px}
+.sline.done{background:var(--ink)}
+
+/* form */
+.field{margin-bottom:16px}
+.flbl{font-size:12.5px;font-weight:600;color:var(--ink2);margin-bottom:6px;display:flex;align-items:center;gap:4px}
+.flbl .req{color:var(--red);font-weight:400}
+.fhint{font-size:12px;color:var(--ink3);margin-bottom:6px;line-height:1.5}
+.finput,.fsel,.ftxt{width:100%;padding:12px 13px;border:1px solid var(--border);border-radius:var(--rs);font-size:15px;font-family:inherit;color:var(--ink);background:var(--surface);outline:none;appearance:none;-webkit-appearance:none;transition:border-color .15s}
+.finput:focus,.fsel:focus,.ftxt:focus{border-color:var(--border-hi)}
+.ftxt{resize:none;min-height:100px;line-height:1.65}
+.fsel-wrap{position:relative}
+.fsel-wrap::after{content:'';position:absolute;right:13px;top:50%;transform:translateY(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--ink3);pointer-events:none}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:8px 14px;border-radius:100px;border:1px solid var(--border);background:var(--surface);font-size:13.5px;color:var(--ink2);cursor:pointer;transition:all .12s;-webkit-user-select:none}
+.chip:active{transform:scale(.97)}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* photo */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pslot{aspect-ratio:1;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;color:var(--ink4)}
+.pslot svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.5}
+.pslot span{font-size:11px;margin-top:5px}
+.pslot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pdel{position:absolute;top:5px;right:5px;width:20px;height:20px;background:rgba(0,0,0,.55);color:#fff;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;z-index:2}
+
+/* confirm */
+.cblock{background:var(--surface);border-radius:var(--r);overflow:hidden}
+.crow{display:flex;gap:12px;padding:13px 16px;border-bottom:1px solid var(--border);align-items:flex-start}
+.crow:last-child{border-bottom:none}
+.ckey{font-size:12px;color:var(--ink3);width:54px;flex-shrink:0;padding-top:1px}
+.cval{font-size:14px;color:var(--ink);line-height:1.5;flex:1}
+
+/* notice */
+.notice{background:var(--bg2);border-radius:var(--rs);padding:12px 14px;font-size:13px;color:var(--ink2);line-height:1.6}
+.notice strong{color:var(--ink)}
+
+/* buttons */
+.btn{width:100%;padding:15px;border-radius:var(--r);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:opacity .1s;margin-top:8px}
+.btn:active{opacity:.8}
+.btn:disabled{opacity:.35;pointer-events:none}
+.btn-dark{background:var(--ink);color:#fff}
+.btn-ghost{background:var(--surface);color:var(--ink);border:1px solid var(--border)}
+
+/* case cards */
+.ccard{background:var(--surface);border-radius:var(--r);padding:16px;margin-bottom:10px;border:1px solid var(--border)}
+.ccard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.cproj{font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.03em}
+.ctitle{font-size:14.5px;font-weight:600;line-height:1.3}
+.cdesc{font-size:13px;color:var(--ink2);line-height:1.5}
+.cmeta{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink3);margin-top:10px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:4px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.tag::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.t-pending{background:var(--bg2);color:var(--ink2)}.t-pending::before{background:var(--ink3)}
+.t-contacted{background:var(--amber-bg);color:var(--amber)}.t-contacted::before{background:var(--amber)}
+.t-done{background:var(--green-bg);color:var(--green)}.t-done::before{background:var(--green)}
+.t-overdue{background:var(--red-bg);color:var(--red)}.t-overdue::before{background:var(--red)}
+
+/* admin tabs */
+.atabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px;flex-shrink:0}
+.atab{padding:10px 16px;font-size:13.5px;cursor:pointer;color:var(--ink3);border-bottom:2px solid transparent;transition:all .15s;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap}
+.atab:hover{color:var(--ink)}
+.atab.on{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+
+/* admin filter row */
+.frow{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.frow input,.frow select{padding:9px 11px;border:1px solid var(--border);border-radius:var(--rs);font-size:13px;font-family:inherit;color:var(--ink);background:var(--surface);outline:none;appearance:none;-webkit-appearance:none}
+.frow input{flex:1;min-width:160px}
+
+/* status update inline */
+.su-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.su-btn{padding:7px 13px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface);font-size:12.5px;font-family:inherit;cursor:pointer;color:var(--ink2);transition:all .12s}
+.su-btn:active{opacity:.7}
+.su-btn.act{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* success */
+.suc-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;text-align:center}
+.suc-ico{width:72px;height:72px;border-radius:50%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;margin-bottom:22px;animation:pop .35s cubic-bezier(.17,.89,.32,1.28) both}
+.suc-ico svg{width:32px;height:32px;stroke:var(--green);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.suc-title{font-size:20px;font-weight:700;margin-bottom:8px}
+.suc-sub{font-size:14px;color:var(--ink2);line-height:1.7;margin-bottom:28px}
+.ref-box{background:var(--bg);border-radius:var(--r);padding:16px 24px;margin-bottom:28px;width:100%;text-align:center}
+.ref-lbl{font-size:11px;color:var(--ink3);letter-spacing:.06em;margin-bottom:6px}
+.ref-no{font-size:24px;font-weight:700;letter-spacing:.06em}
+
+/* empty */
+.empty{text-align:center;padding:60px 20px;color:var(--ink3)}
+.empty svg{width:40px;height:40px;stroke:var(--border);fill:none;stroke-width:1.5;margin-bottom:14px}
+.empty p{font-size:13.5px;line-height:1.7}
+
+/* divider */
+.div{height:1px;background:var(--border);margin:20px 0}
+
+/* reminder badge on home */
+.rbadge{display:inline-flex;align-items:center;gap:5px;background:var(--red-bg);color:var(--red);font-size:12px;font-weight:600;padding:4px 10px;border-radius:100px;margin-top:12px}
+
+/* toast */
+.toast{position:fixed;bottom:calc(var(--sb) + 18px);left:50%;transform:translateX(-50%) translateY(12px);background:rgba(20,20,20,.92);color:#fff;padding:11px 20px;border-radius:100px;font-size:13.5px;white-space:nowrap;z-index:999;opacity:0;transition:opacity .18s,transform .18s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* install */
+.ibar{background:#1A1A1A;color:#fff;padding:12px 16px;display:none;align-items:center;gap:10px;font-size:13px}
+.ibar.on{display:flex}
+.ibar button{margin-left:auto;background:#fff;color:#1A1A1A;border:none;padding:6px 14px;border-radius:100px;font-size:12.5px;font-weight:600;cursor:pointer;flex-shrink:0}
+
+/* admin area guard */
+.pin-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:40px 24px;gap:16px;text-align:center}
+.pin-title{font-size:18px;font-weight:600}
+.pin-sub{font-size:13px;color:var(--ink3)}
+.pin-input{width:100%;max-width:280px;padding:14px;border:1.5px solid var(--border);border-radius:var(--r);font-size:24px;font-family:inherit;text-align:center;letter-spacing:.25em;outline:none;background:var(--surface)}
+.pin-input:focus{border-color:var(--border-hi)}
+</style>
+</head>
+<body>
+
+<!-- ══════════ HOME ══════════ -->
+<div class="sc on" id="s-home">
+  <div class="hero">
+    <div class="hero-co">MUJIEH DESIGN</div>
+    <div class="hero-title">保固維修<br>申請服務</div>
+    <div class="hero-sub">填寫後，管理部將於工作天內與您確認。</div>
+    <div id="home-alert" style="display:none">
+      <div class="rbadge" id="home-alert-txt"></div>
+    </div>
+  </div>
+  <div class="ibar" id="ibar">加入主畫面，方便下次使用<button onclick="installPWA()">加入</button></div>
+  <div class="bd pad">
+    <div class="slbl">服務項目</div>
+    <div class="mlist">
+      <div class="mrow" onclick="go('s-f1')">
+        <div class="mrow-ico"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+        <div class="mrow-txt"><div class="mrow-title">填寫維修申請</div><div class="mrow-sub">說明維修位置與問題</div></div>
+        <div class="mrow-chev">›</div>
+      </div>
+      <div class="mrow" onclick="go('s-hist')">
+        <div class="mrow-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="mrow-txt"><div class="mrow-title">查詢維修進度</div><div class="mrow-sub">確認申請狀態</div></div>
+        <div class="mrow-chev">›</div>
+      </div>
+      <div class="mrow" onclick="goAdmin()">
+        <div class="mrow-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+        <div class="mrow-txt"><div class="mrow-title">管理後台</div><div class="mrow-sub">案件追蹤與逾期提醒</div></div>
+        <div class="mrow-alert" id="home-overdue-badge" style="display:none">!</div>
+        <div class="mrow-chev">›</div>
+      </div>
+    </div>
+    <div class="slbl">服務說明</div>
+    <div class="iblock">
+      <div class="irow"><div class="ilbl">保固內</div><div class="ival">免費安排維修</div></div>
+      <div class="idiv"></div>
+      <div class="irow"><div class="ilbl">保固外</div><div class="ival">管理部業務將聯繫提供報價確認</div></div>
+      <div class="idiv"></div>
+      <div class="irow"><div class="ilbl">服務時間</div><div class="ival">週一至週五　09:00 – 18:00</div></div>
+      <div class="idiv"></div>
+      <div class="irow"><div class="ilbl">回覆時間</div><div class="ival">1–2 個工作天內聯繫</div></div>
+    </div>
+    <div style="margin-top:28px;text-align:center;font-size:12px;color:var(--ink3);line-height:1.8">木介設計有限公司</div>
+  </div>
+</div>
+
+<!-- ══════════ FORM STEP 1 ══════════ -->
+<div class="sc" id="s-f1">
+  <div class="tb">
+    <button class="tb-back" onclick="go('s-home')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="tb-title">維修申請</div><div class="tb-badge">1 / 3</div>
+  </div>
+  <div class="bd pad">
+    <div class="steps">
+      <div class="sdot act">1</div><div class="stxt act">問題描述</div>
+      <div class="sline"></div>
+      <div class="sdot todo">2</div><div class="stxt">聯絡資訊</div>
+      <div class="sline"></div>
+      <div class="sdot todo">3</div><div class="stxt">確認送出</div>
+    </div>
+    <div class="field">
+      <div class="flbl">維修類別<span class="req"> *</span></div>
+      <div class="fhint">可複選</div>
+      <div class="chips" id="chips">
+        <div class="chip" onclick="toggleChip(this,'燈具照明')">燈具照明</div>
+        <div class="chip" onclick="toggleChip(this,'門把五金')">門把五金</div>
+        <div class="chip" onclick="toggleChip(this,'木作系統櫃')">木作系統櫃</div>
+        <div class="chip" onclick="toggleChip(this,'地板')">地板</div>
+        <div class="chip" onclick="toggleChip(this,'水電漏水')">水電漏水</div>
+        <div class="chip" onclick="toggleChip(this,'窗簾遮陽')">窗簾遮陽</div>
+        <div class="chip" onclick="toggleChip(this,'油漆牆面')">油漆牆面</div>
+        <div class="chip" onclick="toggleChip(this,'其他')">其他</div>
+      </div>
+    </div>
+    <div class="field">
+      <div class="flbl">問題說明<span class="req"> *</span></div>
+      <div class="fhint">請描述損壞位置、狀況及數量</div>
+      <textarea class="ftxt" id="f-desc" placeholder="例：客廳天花板崁燈閃爍共 2 盞；主臥室門把鬆脫…"></textarea>
+    </div>
+    <div class="field">
+      <div class="flbl">現況照片</div>
+      <div class="fhint">拍攝損壞位置，最多 3 張</div>
+      <div class="pgrid">
+        <label class="pslot" id="ps0"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span>拍照</span><input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhoto(this,0)"></label>
+        <label class="pslot" id="ps1"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span>拍照</span><input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhoto(this,1)"></label>
+        <label class="pslot" id="ps2"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span>拍照</span><input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhoto(this,2)"></label>
+      </div>
+    </div>
+    <button class="btn btn-dark" onclick="toF2()">下一步</button>
+  </div>
+</div>
+
+<!-- ══════════ FORM STEP 2 ══════════ -->
+<div class="sc" id="s-f2">
+  <div class="tb">
+    <button class="tb-back" onclick="go('s-f1')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="tb-title">維修申請</div><div class="tb-badge">2 / 3</div>
+  </div>
+  <div class="bd pad">
+    <div class="steps">
+      <div class="sdot done">✓</div><div class="stxt">問題描述</div>
+      <div class="sline done"></div>
+      <div class="sdot act">2</div><div class="stxt act">聯絡資訊</div>
+      <div class="sline"></div>
+      <div class="sdot todo">3</div><div class="stxt">確認送出</div>
+    </div>
+    <div class="field"><div class="flbl">姓名<span class="req"> *</span></div><input class="finput" type="text" id="f-name" placeholder="王小明"></div>
+    <div class="field"><div class="flbl">稱謂</div>
+      <div class="fsel-wrap"><select class="fsel" id="f-title"><option>先生</option><option>小姐</option></select></div>
+    </div>
+    <div class="field"><div class="flbl">聯絡電話<span class="req"> *</span></div><input class="finput" type="tel" id="f-phone" inputmode="tel" placeholder="0912-345-678"></div>
+    <div class="field"><div class="flbl">案件名稱<span class="req"> *</span></div><input class="finput" type="text" id="f-proj" placeholder="例：悅世界25F張宅"></div>
+    <div class="field"><div class="flbl">維修地址<span class="req"> *</span></div><input class="finput" type="text" id="f-addr" placeholder="台南市…"></div>
+    <div class="field">
+      <div class="flbl">方便聯繫時段</div>
+      <div class="fsel-wrap"><select class="fsel" id="f-time"><option value="">不限</option><option>上午 09:00 – 12:00</option><option>下午 13:00 – 18:00</option><option>請先以簡訊聯繫</option></select></div>
+    </div>
+    <div class="field"><div class="flbl">其他備註</div><textarea class="ftxt" id="f-note" placeholder="門禁說明、特殊狀況等…" style="min-height:72px"></textarea></div>
+    <button class="btn btn-dark" onclick="toF3()">下一步</button>
+  </div>
+</div>
+
+<!-- ══════════ FORM STEP 3 ══════════ -->
+<div class="sc" id="s-f3">
+  <div class="tb">
+    <button class="tb-back" onclick="go('s-f2')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="tb-title">確認送出</div><div class="tb-badge">3 / 3</div>
+  </div>
+  <div class="bd pad">
+    <div class="steps">
+      <div class="sdot done">✓</div><div class="stxt">問題描述</div>
+      <div class="sline done"></div>
+      <div class="sdot done">✓</div><div class="stxt">聯絡資訊</div>
+      <div class="sline done"></div>
+      <div class="sdot act">3</div><div class="stxt act">確認送出</div>
+    </div>
+    <div class="slbl">申請內容確認</div>
+    <div class="cblock" id="confirm-block"></div>
+    <div class="div"></div>
+    <div class="notice">送出後管理部將以 <strong>電話及 Email</strong> 確認收件。<strong>保固外</strong>項目，業務將另行提供報價。</div>
+    <button class="btn btn-dark" id="submit-btn" onclick="doSubmit()">確認送出</button>
+    <button class="btn btn-ghost" onclick="go('s-f1')">修改內容</button>
+  </div>
+</div>
+
+<!-- ══════════ SUCCESS ══════════ -->
+<div class="sc" id="s-ok">
+  <div class="tb" style="justify-content:flex-end"><div class="tb-badge">木介設計</div></div>
+  <div class="suc-wrap bd">
+    <div class="suc-ico"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="suc-title">申請已送出</div>
+    <div class="suc-sub">管理部將在 1–2 個工作天內<br>以電話或 Email 與您聯繫確認。</div>
+    <div class="ref-box"><div class="ref-lbl">報修編號</div><div class="ref-no" id="ref-no">—</div></div>
+    <button class="btn btn-dark" style="width:100%" onclick="go('s-hist')">查看維修進度</button>
+    <button class="btn btn-ghost" style="width:100%" onclick="go('s-home')">回首頁</button>
+  </div>
+</div>
+
+<!-- ══════════ HISTORY ══════════ -->
+<div class="sc" id="s-hist">
+  <div class="tb">
+    <button class="tb-back" onclick="go('s-home')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="tb-title">維修進度</div>
+  </div>
+  <div class="bd pad" id="hist-body"></div>
+</div>
+
+<!-- ══════════ ADMIN PIN ══════════ -->
+<div class="sc" id="s-pin">
+  <div class="tb">
+    <button class="tb-back" onclick="go('s-home')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="tb-title">管理後台</div>
+  </div>
+  <div class="pin-wrap">
+    <div class="pin-title">請輸入管理密碼</div>
+    <div class="pin-sub">僅限木介設計內部人員使用</div>
+    <input class="pin-input" type="password" id="pin-input" inputmode="numeric" maxlength="6" placeholder="••••••" onkeydown="if(event.key==='Enter')checkPin()">
+    <button class="btn btn-dark" style="width:100%;max-width:280px" onclick="checkPin()">進入後台</button>
+  </div>
+</div>
+
+<!-- ══════════ ADMIN ══════════ -->
+<div class="sc" id="s-admin">
+  <div class="tb">
+    <button class="tb-back" onclick="go('s-home')"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+    <div class="tb-title">案件管理</div>
+    <button onclick="runOverdueCheck()" style="margin-left:auto;background:none;border:none;font-size:13px;color:var(--ink3);cursor:pointer;font-family:inherit">🔔 檢查逾期</button>
+  </div>
+  <div style="padding:0 16px;flex-shrink:0">
+    <div class="atabs">
+      <button class="atab on" onclick="switchTab(this,'all')">全部</button>
+      <button class="atab" onclick="switchTab(this,'open')">待處理</button>
+      <button class="atab" onclick="switchTab(this,'overdue')">⚠ 逾期</button>
+      <button class="atab" onclick="switchTab(this,'done')">已完成</button>
+      <button class="atab" onclick="switchTab(this,'cancelled')">已取消</button>
+    </div>
+    <div class="frow">
+      <input type="text" id="admin-search" placeholder="搜尋案件、業主…" oninput="renderAdmin()">
+      <select id="admin-filter" onchange="renderAdmin()" style="flex-shrink:0">
+        <option value="">全部狀態</option>
+        <option>待確認</option><option>已聯繫廠商</option><option>已安排維修</option><option>已完成</option><option>已取消</option>
+      </select>
+    </div>
+  </div>
+  <div class="bd pad" style="padding-top:4px" id="admin-body"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──
+const GAS_URL = 'YOUR_GAS_URL_HERE'; // 貼上部署後的 GAS 網址
+const ADMIN_PIN = '1234';             // 修改成你的管理密碼
+const OVERDUE_DAYS = 3;               // 超過幾天未更新視為逾期
+const NOTIFY_EMAIL = 'mujie.work@gmail.com';
+
+// ── STATE ──
+let cats=[], photos=[null,null,null], adminTab='all';
+const DB_KEY='mj_repairs';
+
+// ── STORAGE ──
+const db={
+  get:()=>JSON.parse(localStorage.getItem(DB_KEY)||'[]'),
+  save:(d)=>localStorage.setItem(DB_KEY,JSON.stringify(d)),
+  add:(rec)=>{const d=db.get();d.unshift(rec);db.save(d)},
+  update:(ref,patch)=>{const d=db.get();const i=d.findIndex(r=>r.ref===ref);if(i>-1){d[i]={...d[i],...patch,lastUpdate:today()};db.save(d)}},
+};
+const today=()=>{const n=new Date();return `${n.getFullYear()}/${n.getMonth()+1}/${n.getDate()}`};
+const daysSince=(ds)=>{if(!ds)return 999;const[y,m,d]=ds.split('/').map(Number);return Math.floor((Date.now()-new Date(y,m-1,d))/86400000)};
+
+// ── NAV ──
+function go(id){
+  document.querySelectorAll('.sc').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  window.scrollTo(0,0);
+  if(id==='s-hist') renderHist();
+  if(id==='s-admin') renderAdmin();
+  if(id==='s-home') checkHomeAlert();
+}
+
+function goAdmin(){
+  const pinOk=sessionStorage.getItem('mj_pin_ok');
+  if(pinOk==='1') go('s-admin');
+  else go('s-pin');
+}
+
+function checkPin(){
+  const v=document.getElementById('pin-input').value;
+  if(v===ADMIN_PIN){sessionStorage.setItem('mj_pin_ok','1');document.getElementById('pin-input').value='';go('s-admin');}
+  else{toast('密碼錯誤');document.getElementById('pin-input').value='';}
+}
+
+// ── HOME ALERT ──
+function checkHomeAlert(){
+  const overdue=db.get().filter(r=>!['已完成','已取消'].includes(r.status)&&daysSince(r.lastUpdate)>=OVERDUE_DAYS);
+  const badge=document.getElementById('home-overdue-badge');
+  if(overdue.length>0){
+    badge.style.display='';
+    badge.textContent=overdue.length;
+  } else badge.style.display='none';
+}
+
+// ── CHIPS ──
+function toggleChip(el,v){el.classList.toggle('on');cats=el.classList.contains('on')?[...cats,v]:cats.filter(x=>x!==v)}
+
+// ── PHOTOS ──
+function photoSlotHTML(i){return `<svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg><span>拍照</span><input type="file" accept="image/*" capture="environment" style="display:none" onchange="addPhoto(this,${i})">`}
+function addPhoto(input,i){
+  const f=input.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{photos[i]=e.target.result;const sl=document.getElementById('ps'+i);sl.innerHTML=`<img src="${e.target.result}"><div class="pdel" onclick="rmPhoto(event,${i})">✕</div>`};
+  r.readAsDataURL(f);
+}
+function rmPhoto(e,i){e.preventDefault();e.stopPropagation();photos[i]=null;document.getElementById('ps'+i).innerHTML=photoSlotHTML(i)}
+
+// ── FORM STEPS ──
+function toF2(){
+  const desc=document.getElementById('f-desc').value.trim();
+  if(!desc&&cats.length===0){toast('請選擇類別或填寫問題說明');return}
+  if(!desc){toast('請填寫問題說明');return}
+  go('s-f2');
+}
+function toF3(){
+  const name=document.getElementById('f-name').value.trim();
+  const phone=document.getElementById('f-phone').value.trim();
+  const proj=document.getElementById('f-proj').value.trim();
+  const addr=document.getElementById('f-addr').value.trim();
+  if(!name){toast('請填寫姓名');return}
+  if(!phone){toast('請填寫聯絡電話');return}
+  if(!proj){toast('請填寫案件名稱');return}
+  if(!addr){toast('請填寫維修地址');return}
+  const rows=[
+    ['案件',proj],['類別',cats.length?cats.join('、'):'—'],
+    ['問題',document.getElementById('f-desc').value.trim()],
+    ['姓名',`${name} ${document.getElementById('f-title').value}`],
+    ['電話',phone],['地址',addr],
+    ['時段',document.getElementById('f-time').value||'不限'],
+    ...(document.getElementById('f-note').value.trim()?[['備註',document.getElementById('f-note').value.trim()]]:[]),
+  ];
+  document.getElementById('confirm-block').innerHTML=rows.map(([k,v])=>`<div class="crow"><div class="ckey">${k}</div><div class="cval">${v}</div></div>`).join('');
+  go('s-f3');
+}
+
+// ── SUBMIT ──
+function doSubmit(){
+  const btn=document.getElementById('submit-btn');
+  btn.disabled=true;btn.textContent='送出中…';
+  const ref='MJ'+Date.now().toString().slice(-6);
+  const rec={
+    ref,date:today(),lastUpdate:today(),status:'待確認',
+    name:document.getElementById('f-name').value.trim(),
+    title:document.getElementById('f-title').value,
+    phone:document.getElementById('f-phone').value.trim(),
+    project:document.getElementById('f-proj').value.trim(),
+    addr:document.getElementById('f-addr').value.trim(),
+    cats:[...cats],
+    desc:document.getElementById('f-desc').value.trim(),
+    time:document.getElementById('f-time').value,
+    note:document.getElementById('f-note').value.trim(),
+    photos:photos.filter(Boolean).length,
+  };
+  db.add(rec);
+  const reset=()=>{
+    cats=[];photos=[null,null,null];
+    ['f-desc','f-name','f-phone','f-proj','f-addr','f-note'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('f-time').value='';
+    document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+    for(let i=0;i<3;i++)document.getElementById('ps'+i).innerHTML=photoSlotHTML(i);
+    btn.disabled=false;btn.textContent='確認送出';
+  };
+  document.getElementById('ref-no').textContent=ref;
+  // Send to GAS
+  if(GAS_URL!=='YOUR_GAS_URL_HERE'){
+    fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(rec)})
+    .catch(()=>{setTimeout(()=>{fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(rec)}).catch(()=>{})},30000)});
+  }
+  reset();go('s-ok');
+}
+
+// ── HISTORY ──
+const statusMap={
+  '待確認':['t-pending','待確認'],
+  '已聯繫廠商':['t-contacted','已聯繫廠商'],
+  '已安排維修':['t-contacted','已安排維修'],
+  '已完成':['t-done','已完成'],
+  '已取消':['t-pending','已取消'],
+};
+function renderHist(){
+  const el=document.getElementById('hist-body');
+  const list=db.get();
+  if(!list.length){el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>尚無報修記錄</p></div>`;return}
+  el.innerHTML=list.map(r=>{
+    const[cls,lbl]=statusMap[r.status]||['t-pending','待確認'];
+    return `<div class="ccard">
+      <div class="ccard-top"><div><div class="cproj">報修編號 ${r.ref}　${r.date}</div><div class="ctitle">${r.project}</div></div><span class="tag ${cls}">${lbl}</span></div>
+      <div class="cdesc">${r.desc}</div>
+      ${r.cats.length?`<div class="cmeta"><span>${r.cats.join('　')}</span></div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── ADMIN ──
+function switchTab(el,tab){
+  document.querySelectorAll('.atab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');adminTab=tab;renderAdmin();
+}
+function renderAdmin(){
+  const q=(document.getElementById('admin-search').value||'').toLowerCase();
+  const fs=document.getElementById('admin-filter').value;
+  let list=db.get();
+  if(adminTab==='open') list=list.filter(r=>!['已完成','已取消'].includes(r.status));
+  if(adminTab==='overdue') list=list.filter(r=>!['已完成','已取消'].includes(r.status)&&daysSince(r.lastUpdate)>=OVERDUE_DAYS);
+  if(adminTab==='done') list=list.filter(r=>r.status==='已完成');
+  if(adminTab==='cancelled') list=list.filter(r=>r.status==='已取消');
+  if(q) list=list.filter(r=>`${r.name}${r.project}${r.desc}${r.addr}`.toLowerCase().includes(q));
+  if(fs) list=list.filter(r=>r.status===fs);
+  const el=document.getElementById('admin-body');
+  if(!list.length){el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg><p>目前無符合的案件</p></div>`;return}
+  el.innerHTML=list.map(r=>{
+    const days=daysSince(r.lastUpdate);
+    const overdue=!['已完成','已取消'].includes(r.status)&&days>=OVERDUE_DAYS;
+    const[cls,lbl]=statusMap[r.status]||['t-pending','待確認'];
+    const statuses=['待確認','已聯繫廠商','已安排維修','已完成','已取消'];
+    return `<div class="ccard">
+      <div class="ccard-top">
+        <div>
+          <div class="cproj">${r.ref}　${r.date}${overdue?`　<span style="color:var(--red);font-weight:700">逾期 ${days} 天</span>`:''}</div>
+          <div class="ctitle">${r.project}　${r.name} ${r.title||''}</div>
+        </div>
+        <span class="tag ${overdue?'t-overdue':cls}">${overdue?`逾${days}天`:lbl}</span>
+      </div>
+      <div class="cdesc">${r.desc}</div>
+      <div class="cmeta">
+        <span>📞 ${r.phone}</span>
+        ${r.addr?`<span>📍 ${r.addr}</span>`:''}
+        ${r.cats.length?`<span>${r.cats.join('、')}</span>`:''}
+      </div>
+      ${r.note?`<div style="font-size:12px;color:var(--ink3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">備註：${r.note}</div>`:''}
+      <div class="su-row">
+        ${statuses.map(s=>`<button class="su-btn${r.status===s?' act':''}" onclick="updateStatus('${r.ref}','${s}')">${s}</button>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateStatus(ref,status){
+  db.update(ref,{status});
+  toast(`已更新為「${status}」`);
+  renderAdmin();
+  checkHomeAlert();
+}
+
+// ── OVERDUE CHECK ──
+function runOverdueCheck(){
+  const overdue=db.get().filter(r=>!['已完成','已取消'].includes(r.status)&&daysSince(r.lastUpdate)>=OVERDUE_DAYS);
+  if(!overdue.length){toast('目前無逾期案件 ✓');return}
+
+  // In-app notification
+  toast(`⚠ ${overdue.length} 件案件已逾 ${OVERDUE_DAYS} 天未更新`);
+
+  // Push to GAS to send email
+  if(GAS_URL!=='YOUR_GAS_URL_HERE'){
+    fetch(GAS_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body:JSON.stringify({type:'overdue_alert',cases:overdue,threshold:OVERDUE_DAYS})
+    }).catch(()=>{});
+  }
+
+  // Also request browser push permission
+  if('Notification' in window && Notification.permission==='default'){
+    Notification.requestPermission().then(p=>{
+      if(p==='granted') sendPushNotification(overdue.length);
+    });
+  } else if(Notification.permission==='granted'){
+    sendPushNotification(overdue.length);
+  }
+}
+
+function sendPushNotification(count){
+  if('serviceWorker' in navigator && 'Notification' in window && Notification.permission==='granted'){
+    navigator.serviceWorker.ready.then(reg=>{
+      reg.showNotification('木介設計｜逾期提醒',{
+        body:`有 ${count} 件維修案件超過 ${OVERDUE_DAYS} 天未更新，請盡快跟進。`,
+        icon:'icons/icon-192.png',
+        badge:'icons/icon-192.png',
+        tag:'overdue',
+      });
+    });
+  }
+}
+
+// ── AUTO OVERDUE CHECK (每次開 App 時) ──
+function autoOverdueCheck(){
+  const overdue=db.get().filter(r=>!['已完成','已取消'].includes(r.status)&&daysSince(r.lastUpdate)>=OVERDUE_DAYS);
+  if(overdue.length>0){
+    // App 內推播
+    if(Notification.permission==='granted') sendPushNotification(overdue.length);
+    // 自動寄逾期提醒 Email，每天最多一次
+    const lastSent=localStorage.getItem('mj_overdue_sent');
+    const todayStr=today();
+    if(lastSent!==todayStr && GAS_URL!=='YOUR_GAS_URL_HERE'){
+      fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'overdue_alert',cases:overdue,threshold:OVERDUE_DAYS})}).catch(()=>{});
+      localStorage.setItem('mj_overdue_sent',todayStr);
+    }
+  }
+  checkHomeAlert();
+}
+
+// ── TOAST ──
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2600)}
+
+// ── PWA ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('ibar').classList.add('on')});
+function installPWA(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;document.getElementById('ibar').classList.remove('on')})}
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+
+// ── INIT ──
+autoOverdueCheck();
+// 每小時自動再檢查一次（App 持續開著時）
+setInterval(autoOverdueCheck, 60 * 60 * 1000);
+</script>
+</body>
+</html>
