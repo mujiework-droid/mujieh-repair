@@ -420,7 +420,7 @@ html,body{height:100%;background:var(--bg);font-family:-apple-system,'Helvetica 
       <input type="text" id="admin-search" placeholder="搜尋案件、業主…" oninput="renderAdmin()">
       <select id="admin-filter" onchange="renderAdmin()" style="flex-shrink:0">
         <option value="">全部狀態</option>
-        <option>待確認</option><option>已聯繫廠商</option><option>已安排維修</option><option>已完成</option><option>已取消</option>
+        <option>尚未確認修繕日期</option><option>已跟廠商聯繫</option><option>完工請款階段</option><option>已完成</option><option>已取消</option>
       </select>
     </div>
   </div>
@@ -623,7 +623,7 @@ async function doSubmit(){
   btn.disabled=true;btn.textContent='送出中…';
   const ref='MJ'+Date.now().toString().slice(-6);
   const rec={
-    ref,date:today(),lastUpdate:today(),status:'待確認',
+    ref,date:today(),lastUpdate:today(),status:'尚未確認修繕日期',
     name:document.getElementById('f-name').value.trim(),
     title:document.getElementById('f-title').value,
     phone:document.getElementById('f-phone').value.trim(),
@@ -669,9 +669,9 @@ async function doSubmit(){
 
 // ── HISTORY ──
 const statusMap={
-  '待確認':['t-pending','待確認'],
-  '已聯繫廠商':['t-contacted','已聯繫廠商'],
-  '已安排維修':['t-contacted','已安排維修'],
+  '尚未確認修繕日期':['t-pending','尚未確認修繕日期'],
+  '已跟廠商聯繫':['t-contacted','已跟廠商聯繫'],
+  '完工請款階段':['t-contacted','完工請款階段'],
   '已完成':['t-done','已完成'],
   '已取消':['t-pending','已取消'],
 };
@@ -680,7 +680,7 @@ function renderHist(){
   const list=db.get();
   if(!list.length){el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>尚無報修記錄</p></div>`;return}
   el.innerHTML=list.map(r=>{
-    const[cls,lbl]=statusMap[r.status]||['t-pending','待確認'];
+    const[cls,lbl]=statusMap[r.status]||['t-pending','尚未確認修繕日期'];
     return `<div class="ccard">
       <div class="ccard-top"><div><div class="cproj">報修編號 ${r.ref}　${r.date}</div><div class="ctitle">${r.project}</div></div><span class="tag ${cls}">${lbl}</span></div>
       <div class="cdesc">${r.desc}</div>
@@ -718,8 +718,8 @@ function renderAdmin(){
   el.innerHTML=list.map(r=>{
     const days=daysSince(r.lastUpdate);
     const overdue=!['已完成','已取消'].includes(r.status)&&days>=OVERDUE_DAYS;
-    const[cls,lbl]=statusMap[r.status]||['t-pending','待確認'];
-    const statuses=['待確認','已聯繫廠商','已安排維修','已完成','已取消'];
+    const[cls,lbl]=statusMap[r.status]||['t-pending','尚未確認修繕日期'];
+    const statuses=['尚未確認修繕日期','已跟廠商聯繫','完工請款階段','已完成','已取消'];
     const mediaBtn = r.video
       ? `<a href="${r.video}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:var(--rs);font-size:13px;text-decoration:none;font-weight:500;margin-top:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>查看影片 / 照片</a>`
       : (r.photos>0 ? `<div style="font-size:12px;color:var(--ink3);margin-top:6px">📷 業主已上傳 ${r.photos} 張照片</div>` : '');
