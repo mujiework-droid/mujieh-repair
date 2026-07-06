@@ -830,11 +830,14 @@ function autoOverdueCheck(){
     // App 內推播
     if(Notification.permission==='granted') sendPushNotification(overdue.length);
     // 自動寄逾期提醒 Email，每天最多一次
-    const lastSent=localStorage.getItem('mj_overdue_sent');
-    const todayStr=today();
-    if(lastSent!==todayStr && GAS_URL!=='YOUR_GAS_URL_HERE'){
+    // 每週二自動寄送一次逾期提醒
+    const now=new Date();
+    const isTuesday=now.getDay()===2; // 0=週日, 1=週一, 2=週二...
+    const thisWeekKey=`mj_overdue_${now.getFullYear()}_w${Math.floor(now.getDate()/7)}_${now.getMonth()}`;
+    const lastSent=localStorage.getItem('mj_overdue_week');
+    if(isTuesday && lastSent!==thisWeekKey && GAS_URL!=='YOUR_GAS_URL_HERE'){
       fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({type:'overdue_alert',cases:overdue,threshold:OVERDUE_DAYS})}).catch(()=>{});
-      localStorage.setItem('mj_overdue_sent',todayStr);
+      localStorage.setItem('mj_overdue_week',thisWeekKey);
     }
   }
   checkHomeAlert();
