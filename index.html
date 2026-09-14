@@ -443,7 +443,7 @@ const OVERDUE_DAYS = 3;               // 超過幾天未更新視為逾期
 const NOTIFY_EMAIL = 'mujie.work@gmail.com';
 
 // ── STATE ──
-let cats=[], photos=[null,null,null], adminTab='all';
+let cats=[], photos=[null,null,null], photoUrls=[null,null,null], adminTab='all';
 const DB_KEY='mj_repairs';
 
 // ── STORAGE（本機快取 + 雲端同步）──
@@ -534,10 +534,35 @@ function photoSlotHTML(i){return `<svg viewBox="0 0 24 24"><path d="M23 19a2 2 0
 function addPhoto(input,i){
   const f=input.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=e=>{photos[i]=e.target.result;const sl=document.getElementById('ps'+i);sl.innerHTML=`<img src="${e.target.result}"><div class="pdel" onclick="rmPhoto(event,${i})">✕</div>`};
+  r.onload=e=>{
+    photos[i]=e.target.result;
+    const sl=document.getElementById('ps'+i);
+    sl.innerHTML=`<img src="${e.target.result}"><div class="pdel" onclick="rmPhoto(event,${i})">✕</div>`;
+    // 立即上傳到 Cloudinary
+    uploadPhotoToCloudinary(f, i);
+  };
   r.readAsDataURL(f);
 }
-function rmPhoto(e,i){e.preventDefault();e.stopPropagation();photos[i]=null;document.getElementById('ps'+i).innerHTML=photoSlotHTML(i)}
+
+async function uploadPhotoToCloudinary(file, i) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLD_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLD_CLOUD}/image/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if(data.secure_url) {
+      photoUrls[i] = data.secure_url;
+      console.log('照片上傳成功:', data.secure_url);
+    }
+  } catch(e) {
+    console.log('照片上傳失敗:', e);
+  }
+}
+function rmPhoto(e,i){e.preventDefault();e.stopPropagation();photos[i]=null;photoUrls[i]=null;document.getElementById('ps'+i).innerHTML=photoSlotHTML(i)}
 
 // ── FORM STEPS ──
 function toF2(){
@@ -639,6 +664,7 @@ async function doSubmit(){
     video:document.getElementById('f-video').value.trim(),
     note:document.getElementById('f-note').value.trim(),
     photos:photos.filter(Boolean).length,
+    photoUrls:photoUrls.filter(Boolean),
   };
   // 先上傳影片（若有選取）
   if (document.getElementById('f-video-file').files[0]) {
@@ -654,7 +680,7 @@ async function doSubmit(){
   }
   db.add(rec);
   const reset=()=>{
-    cats=[];photos=[null,null,null];
+    cats=[];photos=[null,null,null];photoUrls=[null,null,null];
     ['f-desc','f-name','f-phone','f-proj','f-addr','f-video','f-note'].forEach(id=>document.getElementById(id).value='');
     clearVideo();
     document.getElementById('f-time').value='';
@@ -724,9 +750,15 @@ function renderAdmin(){
     const overdue=!['已完成','已取消'].includes(r.status)&&days>=OVERDUE_DAYS;
     const[cls,lbl]=statusMap[r.status]||['t-pending','尚未確認修繕日期'];
     const statuses=['尚未確認修繕日期','已跟廠商聯繫','完工請款階段','已完成','已取消'];
-    const mediaBtn = r.video
-      ? `<a href="${r.video}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;padding:8px 14px;border-radius:var(--rs);font-size:13px;text-decoration:none;font-weight:500;margin-top:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>查看影片 / 照片</a>`
-      : (r.photos>0 ? `<div style="font-size:12px;color:var(--ink3);margin-top:6px">📷 業主已上傳 ${r.photos} 張照片</div>` : '');
+    const photoLinks = (r.photoUrls && r.photoUrls.length>0)
+      ? r.photoUrls.map((url,idx)=>`<a href="${url}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;background:var(--bg2);color:var(--ink);padding:6px 12px;border-radius:var(--rs);font-size:12.5px;text-decoration:none;border:1px solid var(--border)">📷 照片 ${idx+1}</a>`).join('')
+      : '';
+    const videoBtn = r.video
+      ? `<a href="${r.video}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;padding:6px 12px;border-radius:var(--rs);font-size:12.5px;text-decoration:none;">▶ 影片</a>`
+      : '';
+    const mediaBtn = (photoLinks || videoBtn)
+      ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">${photoLinks}${videoBtn}</div>`
+      : (r.photos>0 ? `<div style="font-size:12px;color:var(--ink3);margin-top:6px">📷 業主已上傳 ${r.photos} 張（舊版資料無連結）</div>` : '');
     return `<div class="ccard">
       <div class="ccard-top" onclick="toggleDetail('${r.ref}')" style="cursor:pointer;margin-bottom:0">
         <div>
