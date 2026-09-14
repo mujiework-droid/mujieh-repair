@@ -1,4 +1,4 @@
-const CACHE = 'mujieh-v3';
+const CACHE = 'mujieh-v4';
 const ASSETS = ['./index.html'];
 
 self.addEventListener('install', e => {
